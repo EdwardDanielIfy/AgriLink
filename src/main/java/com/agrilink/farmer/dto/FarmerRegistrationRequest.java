@@ -1,12 +1,11 @@
 package com.agrilink.farmer.dto;
 
-import com.agrilink.shared.enums.Language;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
-public class FarmerRequest {
+public class FarmerRegistrationRequest {
 
     @NotBlank(message = "Full name is required")
     private String fullName;
@@ -20,11 +19,17 @@ public class FarmerRequest {
 
     private String primaryCrop;
 
-    private Language preferredLanguage;
+    private String preferredLanguage;
 
     private Boolean hasAppAccess;
 
     private String registeredByAgentId;
+
+    private String bankAccountNumber;
+
+    private String bankAccountName;
+
+    private String bankName;
 }
 
 

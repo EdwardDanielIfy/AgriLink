@@ -1,58 +1,53 @@
 package com.agrilink.farmer;
 
-import com.agrilink.farmer.dto.FarmerRequest;
-import com.agrilink.farmer.dto.FarmerResponse;
-import com.agrilink.farmer.dto.FarmerSelfRegisterRequest;
+import com.agrilink.farmer.dto.*;
+import com.agrilink.shared.APIResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
     @RestController
     @RequestMapping("/api/farmers")
+    @RequiredArgsConstructor
     public class FarmerController {
 
         private final FarmerServices farmerServices;
 
-        public FarmerController(FarmerServices farmerServices) {
-            this.farmerServices = farmerServices;
-        }
-
         @PostMapping("/register")
-        public ResponseEntity<FarmerResponse> selfRegister(@Valid @RequestBody FarmerSelfRegisterRequest request) {
-            return ResponseEntity.status(201)
-                    .body(farmerServices.register(request));
+        public ResponseEntity<APIResponse> selfRegister(@Valid @RequestBody FarmerSelfRegisterRequest request) {
+            return new ResponseEntity<>(new APIResponse(true, farmerServices.register(request)), HttpStatus.CREATED);
         }
 
         @PostMapping("/login")
-        public ResponseEntity<FarmerResponse> login(@RequestParam String phoneNumber, @RequestParam String password) {
-            return ResponseEntity.ok(farmerServices.farmerLogin(phoneNumber, password));
+        public ResponseEntity<APIResponse> login(@Valid @RequestBody FarmerLoginRequest request) {
+            return new ResponseEntity<>(new APIResponse(true, farmerServices.farmerLogin(request.getPhoneNumber(), request.getPassword())), HttpStatus.OK);
         }
 
         @PutMapping("/{farmerId}/change-password")
-        public ResponseEntity<String> changePassword(@PathVariable String farmerId, @RequestParam String oldPassword, @RequestParam String newPassword) {
-            farmerServices.changePassword(farmerId, oldPassword, newPassword);
-            return ResponseEntity.ok("Password changed successfully");
+        public ResponseEntity<APIResponse> changePassword(@PathVariable String farmerId, @Valid @RequestBody ChangePasswordRequest request) {
+            farmerServices.changePassword(farmerId, request.getOldPassword(), request.getNewPassword());
+            return new ResponseEntity<>(new APIResponse(true, "Password changed successfully"), HttpStatus.OK);
         }
 
         @GetMapping("/{farmerId}")
-        public ResponseEntity<FarmerResponse> viewProfile(@PathVariable String farmerId) {
-            return ResponseEntity.ok(farmerServices.viewProfile(farmerId));
+        public ResponseEntity<APIResponse> viewMyProfile(@PathVariable String farmerId) {
+            return new ResponseEntity<>(new APIResponse(true, farmerServices.viewProfile((farmerId))), HttpStatus.OK);
         }
 
         @PutMapping("/{farmerId}")
-        public ResponseEntity<FarmerResponse> updateMyInfo(@PathVariable String farmerId, @Valid @RequestBody FarmerRequest request) {
-            return ResponseEntity.ok(farmerServices.updateMyInfo(farmerId, request));
+        public ResponseEntity<APIResponse> updateMyInfo(@PathVariable String farmerId, @RequestBody UpdateFarmerInfoRequest request) {
+            return new ResponseEntity<>(new APIResponse(true, farmerServices.updateMyInfo(farmerId, request)),HttpStatus.OK);
         }
 
         @GetMapping("/{farmerId}/storage-debt")
-        public ResponseEntity<Double> getMyStorageDebt(@PathVariable String farmerId) {
-            return ResponseEntity.ok(farmerServices.viewStorageDebt(farmerId));
+        public ResponseEntity<APIResponse> getMyStorageDebt(@PathVariable String farmerId) {return new ResponseEntity<>(
+                    new APIResponse(true, farmerServices.viewStorageDebt(farmerId)), HttpStatus.OK);
         }
-
         @GetMapping("/{farmerId}/agent-contact")
-        public ResponseEntity<String> getMyAgentContact(@PathVariable String farmerId) {
-            return ResponseEntity.ok(farmerServices.getMyAgentContact(farmerId));
+        public ResponseEntity<APIResponse> getMyAgentContact(@PathVariable String farmerId) {
+            return new ResponseEntity<>(new APIResponse(true, farmerServices.getMyAgent(farmerId)), HttpStatus.OK);
         }
     }
 

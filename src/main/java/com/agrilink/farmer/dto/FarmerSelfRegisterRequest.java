@@ -21,10 +21,14 @@ import lombok.Data;
 
         private String primaryCrop;
 
-        private Language preferredLanguage;
+        private String preferredLanguage;
 
         @NotBlank(message = "Password is required")
         @Size(min = 8, message = "Password must be at least 8 characters")
         private String password;
+
+        private String bankAccountNumber;
+        private String bankAccountName;
+        private String bankName;
     }
 

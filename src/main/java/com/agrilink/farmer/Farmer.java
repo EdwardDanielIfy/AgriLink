@@ -49,6 +49,15 @@ import java.time.LocalDateTime;
         @Column(name = "registered_at", updatable = false)
         private LocalDateTime registeredAt;
 
+        @Column(name = "bank_account_number")
+        private String bankAccountNumber;
+
+        @Column(name = "bank_account_name")
+        private String bankAccountName;
+
+        @Column(name = "bank_name")
+        private String bankName;
+
         @PrePersist
         protected void onCreate() {
             this.farmerId = "AGF-" + this.phoneNumber.replaceAll("[^0-9]", "");

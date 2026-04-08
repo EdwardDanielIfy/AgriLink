@@ -5,11 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @Builder
-public class FarmerResponse {
+public class FarmerRegistrationResponse {
         private String farmerId;
         private String fullName;
         private String phoneNumber;
@@ -20,5 +19,8 @@ public class FarmerResponse {
         private Boolean hasAppAccess;
         private String registeredByAgentId;
         private LocalDateTime registeredAt;
+        private String bankAccountNumber;
+        private String bankAccountName;
+        private String bankName;
     }
 

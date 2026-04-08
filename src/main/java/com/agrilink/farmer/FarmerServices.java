@@ -1,10 +1,12 @@
 package com.agrilink.farmer;
 
-import com.agrilink.farmer.dto.FarmerRequest;
-import com.agrilink.farmer.dto.FarmerResponse;
+import com.agrilink.farmer.dto.FarmerRegistrationResponse;
 import com.agrilink.farmer.dto.FarmerSelfRegisterRequest;
+import com.agrilink.farmer.dto.UpdateFarmerInfoRequest;
 import com.agrilink.farmer.exceptions.DuplicateFarmerPhoneException;
 import com.agrilink.farmer.exceptions.FarmerNotFoundException;
+import com.agrilink.shared.enums.Language;
+import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +24,7 @@ public class FarmerServices {
     @Value("${agrilink.default-agent-id}")
     private String defaultAgentId;
 
-    public FarmerResponse register(FarmerSelfRegisterRequest request) {
+    public FarmerRegistrationResponse register(FarmerSelfRegisterRequest request) {
         if (farmerRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw new DuplicateFarmerPhoneException(request.getPhoneNumber());
         }
@@ -32,16 +34,21 @@ public class FarmerServices {
         farmer.setPhoneNumber(request.getPhoneNumber());
         farmer.setLocation(request.getLocation());
         farmer.setPrimaryCrop(request.getPrimaryCrop());
-        farmer.setPreferredLanguage(request.getPreferredLanguage());
+        if (request.getPreferredLanguage() != null) {
+            farmer.setPreferredLanguage(Language.valueOf(request.getPreferredLanguage().toUpperCase()));
+        }
         farmer.setPassword(passwordEncoder.encode(request.getPassword()));
         farmer.setHasAppAccess(true);
         farmer.setRegisteredByAgentId(resolveAgent(request.getLocation()));
+        farmer.setBankAccountName(request.getBankAccountName());
+        farmer.setBankAccountNumber(request.getBankAccountNumber());
+        farmer.setBankName(request.getBankName());
 
         return mapToResponse(farmerRepository.save(farmer));
     }
 
 
-    public FarmerResponse farmerLogin(String phoneNumber, String password) {
+    public String farmerLogin(String phoneNumber, String password) {
         Farmer farmer = farmerRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new FarmerNotFoundException(phoneNumber));
 
@@ -52,10 +59,10 @@ public class FarmerServices {
         }
 
         if (!passwordEncoder.matches(password, farmer.getPassword())) {
-            throw new ResourceNotFoundException("Invalid phone number or password");
+            throw new FarmerNotFoundException("Invalid phone number or password");
         }
 
-        return mapToResponse(farmer);
+        return "Login successful";
     }
 
     public void changePassword(String farmerId, String oldPassword, String newPassword) {
@@ -63,26 +70,43 @@ public class FarmerServices {
                 .orElseThrow(() -> new FarmerNotFoundException(farmerId));
 
         if (!passwordEncoder.matches(oldPassword, farmer.getPassword())) {
-            throw new ResourceNotFoundException("Current password is incorrect");
+            throw new InvalidOperationException("Current password is incorrect");
         }
 
         farmer.setPassword(passwordEncoder.encode(newPassword));
         farmerRepository.save(farmer);
     }
 
-    public FarmerResponse updateMyInfo(String farmerId, FarmerRequest request) {
+    public String updateMyInfo(String farmerId, UpdateFarmerInfoRequest request) {
         Farmer farmer = farmerRepository.findById(farmerId)
                 .orElseThrow(() -> new FarmerNotFoundException(farmerId));
 
-        farmer.setFullName(request.getFullName());
-        farmer.setLocation(request.getLocation());
-        farmer.setPrimaryCrop(request.getPrimaryCrop());
-        farmer.setPreferredLanguage(request.getPreferredLanguage());
-
-        return mapToResponse(farmerRepository.save(farmer));
+        if (request.getFullName() != null) {
+            farmer.setFullName(request.getFullName());
+        }
+        if (request.getLocation() != null) {
+            farmer.setLocation(request.getLocation());
+        }
+        if (request.getPrimaryCrop() != null) {
+            farmer.setPrimaryCrop(request.getPrimaryCrop());
+        }
+        if (request.getPreferredLanguage() != null) {
+            farmer.setPreferredLanguage(Language.valueOf(request.getPreferredLanguage().toUpperCase()));
+        }
+        if (request.getBankAccountNumber() != null) {
+            farmer.setBankAccountNumber(request.getBankAccountNumber());
+        }
+        if (request.getBankAccountName() != null) {
+            farmer.setBankAccountName(request.getBankAccountName());
+        }
+        if (request.getBankName() != null) {
+            farmer.setBankName(request.getBankName());
+        }
+        farmerRepository.save(farmer);
+        return "Updated Successfully";
     }
 
-    public FarmerResponse viewProfile(String farmerId) {
+    public FarmerRegistrationResponse viewProfile(String farmerId) {
         Farmer farmer = farmerRepository.findById(farmerId)
                 .orElseThrow(() -> new FarmerNotFoundException(farmerId));
         return mapToResponse(farmer);
@@ -94,7 +118,7 @@ public class FarmerServices {
         return farmer.getStorageDebt();
     }
 
-    public String getMyAgentContact(String farmerId) {
+    public String getMyAgent(String farmerId) {
         Farmer farmer = farmerRepository.findById(farmerId)
                 .orElseThrow(() -> new FarmerNotFoundException(farmerId));
         return farmer.getRegisteredByAgentId();

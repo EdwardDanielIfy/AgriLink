@@ -1,12 +1,12 @@
 package com.agrilink.farmer.utils;
 
 import com.agrilink.farmer.Farmer;
-import com.agrilink.farmer.dto.FarmerResponse;
+import com.agrilink.farmer.dto.FarmerRegistrationResponse;
 
 public class Mapper {
 
-    public static FarmerResponse mapToResponse(Farmer farmer) {
-        return FarmerResponse.builder()
+    public static FarmerRegistrationResponse mapToResponse(Farmer farmer) {
+        return FarmerRegistrationResponse.builder()
                 .farmerId(farmer.getFarmerId())
                 .fullName(farmer.getFullName())
                 .phoneNumber(farmer.getPhoneNumber())
@@ -16,6 +16,9 @@ public class Mapper {
                 .storageDebt(farmer.getStorageDebt())
                 .registeredByAgentId(farmer.getRegisteredByAgentId())
                 .registeredAt(farmer.getRegisteredAt())
+                .bankName(farmer.getBankName())
+                .bankAccountNumber(farmer.getBankAccountNumber())
+                .bankAccountName(farmer.getBankAccountName())
                 .build();
     }
 }
