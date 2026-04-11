@@ -2,6 +2,7 @@ package com.agrilink.farmer;
 
 import com.agrilink.farmer.dto.*;
 import com.agrilink.shared.APIResponse;
+import com.agrilink.shared.dto.ChangePasswordRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

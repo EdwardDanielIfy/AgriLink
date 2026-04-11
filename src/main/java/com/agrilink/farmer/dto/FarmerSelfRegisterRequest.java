@@ -1,6 +1,5 @@
 package com.agrilink.farmer.dto;
 
-import com.agrilink.shared.enums.Language;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

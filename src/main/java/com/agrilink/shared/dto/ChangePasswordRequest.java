@@ -1,4 +1,4 @@
-package com.agrilink.farmer.dto;
+package com.agrilink.shared.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

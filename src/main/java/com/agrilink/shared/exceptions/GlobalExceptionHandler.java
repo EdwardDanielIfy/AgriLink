@@ -1,6 +1,18 @@
 package com.agrilink.shared.exceptions;
 
+import com.agrilink.agent.exceptions.AgentNotFoundException;
+import com.agrilink.agent.exceptions.DuplicateAgentPhoneException;
+import com.agrilink.buyer.exceptions.BuyerNotFoundException;
+import com.agrilink.buyer.exceptions.DuplicateBuyerPhoneException;
+import com.agrilink.farmer.exceptions.DuplicateFarmerPhoneException;
+import com.agrilink.farmer.exceptions.FarmerNotFoundException;
+import com.agrilink.produce.exceptions.ProduceNotAvailableException;
+import com.agrilink.produce.exceptions.ProduceNotFoundException;
 import com.agrilink.shared.APIResponse;
+import com.agrilink.storage.exceptions.InsufficientStorageSlotsException;
+import com.agrilink.storage.exceptions.StorageNotFoundException;
+import com.agrilink.transaction.exceptions.InvalidTransactionStateException;
+import com.agrilink.transaction.exceptions.TransactionNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,25 +22,42 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     // 404s
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<APIResponse> handleNotFound(ResourceNotFoundException ex) {
+    @ExceptionHandler({
+            FarmerNotFoundException.class,
+            AgentNotFoundException.class,
+            BuyerNotFoundException.class,
+            ProduceNotFoundException.class,
+            StorageNotFoundException.class,
+            TransactionNotFoundException.class
+    })
+    public ResponseEntity<APIResponse> handleNotFound(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.NOT_FOUND);
     }
+
     // 409s
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<APIResponse> handleConflict(DuplicateResourceException ex) {
+    @ExceptionHandler({
+            DuplicateFarmerPhoneException.class,
+            DuplicateAgentPhoneException.class,
+            DuplicateBuyerPhoneException.class,
+            InsufficientStorageSlotsException.class
+    })
+    public ResponseEntity<APIResponse> handleConflict(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.CONFLICT);
     }
 
     // 400s
-    @ExceptionHandler(InvalidOperationException.class)
-    public ResponseEntity<APIResponse> handleBadRequest(InvalidOperationException ex) {
+    @ExceptionHandler({
+            InvalidOperationException.class,
+            InvalidTransactionStateException.class,
+            ProduceNotAvailableException.class
+    })
+    public ResponseEntity<APIResponse> handleBadRequest(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
     // 403s
     @ExceptionHandler(UnauthorizedActionException.class)
-    public ResponseEntity<APIResponse> handleUnauthorized(UnauthorizedActionException ex) {
+    public ResponseEntity<APIResponse> handleUnauthorized(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.FORBIDDEN);
     }
 
@@ -44,10 +73,9 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new APIResponse(false, message), HttpStatus.BAD_REQUEST);
     }
 
-    // safety net — catches anything else
+    // safety net
     @ExceptionHandler(AgrilinkException.class)
     public ResponseEntity<APIResponse> handleGeneral(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-

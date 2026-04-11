@@ -26,6 +26,12 @@ server:
 
 agrilink:
   default-agent-id: AGA-ADMIN001
+  commission-rate: 0.05
 
   jpa:
     open-in-view: false
+
+    africastalking:
+      username: your_username
+      api-key: ${AFRICASTALKING_API_KEY}
+      sender-id: AgriLink

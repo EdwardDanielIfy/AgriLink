@@ -1,17 +1,21 @@
 package com.agrilink.farmer;
 
-import com.agrilink.agent.Agent;
-import com.agrilink.agent.AgentRepository;
+import com.agrilink.agent.dto.AgentResponse;
 import com.agrilink.farmer.dto.FarmerRegistrationRequest;
 import com.agrilink.farmer.dto.FarmerRegistrationResponse;
 import com.agrilink.farmer.dto.FarmerSelfRegisterRequest;
 import com.agrilink.farmer.dto.UpdateFarmerInfoRequest;
 import com.agrilink.farmer.exceptions.DuplicateFarmerPhoneException;
 import com.agrilink.farmer.exceptions.FarmerNotFoundException;
+import com.agrilink.shared.AgentProfileProvider;
+import com.agrilink.shared.AgentTerritoryProvider;
+import com.agrilink.shared.FarmerLookupProvider;
+import com.agrilink.shared.FarmerRegistrationProvider;
 import com.agrilink.shared.enums.Language;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.shared.exceptions.ResourceNotFoundException;
 import com.agrilink.shared.exceptions.UnauthorizedActionException;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,11 +29,12 @@ import static com.agrilink.farmer.utils.Mapper.mapToResponse;
 
 @Service
 @RequiredArgsConstructor
-public class FarmerServices {
+public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupProvider {
 
     private final FarmerRepository farmerRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AgentRepository agentRepository;
+    private final AgentTerritoryProvider agentTerritoryProvider;
+    private final AgentProfileProvider agentProfileProvider;
 
     @Value("${agrilink.default-agent-id}")
     private String defaultAgentId;
@@ -128,10 +133,10 @@ public class FarmerServices {
         return farmer.getStorageDebt();
     }
 
-    public String getMyAgent(String farmerId) {
+    public AgentResponse getMyAgent(String farmerId) {
         Farmer farmer = farmerRepository.findById(farmerId)
                 .orElseThrow(() -> new FarmerNotFoundException(farmerId));
-        return farmer.getRegisteredByAgentId();
+        return agentProfileProvider.getMyProfile(farmer.getRegisteredByAgentId());
     }
 
     public Farmer findByPhoneNumber(String phoneNumber) {
@@ -146,8 +151,11 @@ public class FarmerServices {
 
 
     private String assignAgent(String location) {
-        return agentRepository.findByTerritory(location).map(Agent::getAgentId)
-                .orElse(defaultAgentId);
+        String agentId = agentTerritoryProvider.findAgentIdByTerritory(location);
+        if(agentId == null) {
+            agentId = defaultAgentId;
+        }
+        return agentId;
     }
 
 
@@ -228,5 +236,11 @@ public class FarmerServices {
             responses.add(mapToResponse(farmer));
         }
         return responses;
+    }
+
+    public void updateStorageDebt(String farmerId, Double storageDebt) {
+        Farmer farmer = farmerRepository.findById(farmerId).orElseThrow(() -> new FarmerNotFoundException(farmerId));
+        farmer.setStorageDebt(storageDebt);
+        farmerRepository.save(farmer);
     }
 }

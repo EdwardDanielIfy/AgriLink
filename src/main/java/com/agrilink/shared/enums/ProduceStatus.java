@@ -1,6 +1,6 @@
 package com.agrilink.shared.enums;
 
-public enum ProductStatus {
+public enum ProduceStatus {
     AVAILABLE,
     OFFER_PENDING,
     SOLD,

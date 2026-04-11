@@ -30,9 +30,6 @@ import java.time.LocalDateTime;
         @Column(name = "territory")
         private String territory;
 
-        @Column(name = "location")
-        private String location;
-
         @Column(name = "password", nullable = false)
         private String password;
 

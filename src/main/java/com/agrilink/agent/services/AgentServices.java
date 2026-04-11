@@ -1,25 +1,25 @@
-package com.agrilink.agent;
+package com.agrilink.agent.services;
 
+import com.agrilink.agent.Agent;
+import com.agrilink.agent.AgentRepository;
 import com.agrilink.agent.dto.*;
 import com.agrilink.agent.exceptions.AgentNotFoundException;
 import com.agrilink.agent.exceptions.DuplicateAgentPhoneException;
-import com.agrilink.farmer.FarmerServices;
-import com.agrilink.farmer.dto.FarmerRegistrationRequest;
-import com.agrilink.farmer.dto.FarmerRegistrationResponse;
+import com.agrilink.shared.AgentProfileProvider;
+import com.agrilink.shared.AgentTerritoryProvider;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
-public class AgentServices {
+public class AgentServices implements AgentProfileProvider, AgentTerritoryProvider {
 
     private final AgentRepository agentRepository;
     private final PasswordEncoder passwordEncoder;
-    private final FarmerServices farmerServices;
 
     public AgentResponse register(AgentRegisterRequest request) {
         if (agentRepository.existsByPhoneNumber(request.getPhoneNumber())) {
@@ -82,32 +82,6 @@ public class AgentServices {
         return mapToResponse(agentRepository.save(agent));
     }
 
-
-    public FarmerRegistrationResponse registerFarmer(String agentId, FarmerRegistrationRequest request) {
-        agentRepository.findById(agentId).orElseThrow(() -> new AgentNotFoundException(agentId));
-
-        request.setRegisteredByAgentId(agentId);
-        return farmerServices.registerFarmerByAgent(request);
-    }
-
-    public FarmerRegistrationResponse getFarmerById(String agentId, String farmerId) {
-        agentRepository.findById(agentId)
-                .orElseThrow(() -> new AgentNotFoundException(agentId));
-        return farmerServices.getFarmerByIdForAgent(farmerId, agentId);
-    }
-
-    public List<FarmerRegistrationResponse> getMyFarmers(String agentId) {
-        agentRepository.findById(agentId)
-                .orElseThrow(() -> new AgentNotFoundException(agentId));
-        return farmerServices.getFarmersByAgent(agentId);
-    }
-
-    public FarmerRegistrationResponse updateFarmer(String agentId, String farmerId, FarmerRegistrationRequest request) {
-        agentRepository.findById(agentId)
-                .orElseThrow(() -> new AgentNotFoundException(agentId));
-        return farmerServices.updateFarmerByAgent(farmerId, agentId, request);
-    }
-
     public Agent findById(String agentId) {
         return agentRepository.findById(agentId)
                 .orElseThrow(() -> new AgentNotFoundException(agentId));
@@ -123,4 +97,11 @@ public class AgentServices {
                 .registeredAt(agent.getRegisteredAt())
                 .build();
     }
-}
+
+    @Override
+    public String findAgentIdByTerritory(String territory) {
+        return agentRepository.findByTerritory(territory)
+                .map(Agent::getAgentId)
+                .orElse(null);
+    }
+    }
