@@ -11,6 +11,7 @@ import com.agrilink.shared.AgentProfileProvider;
 import com.agrilink.shared.AgentTerritoryProvider;
 import com.agrilink.shared.FarmerLookupProvider;
 import com.agrilink.shared.FarmerRegistrationProvider;
+import com.agrilink.shared.config.JwtUtils;
 import com.agrilink.shared.enums.Language;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.shared.exceptions.ResourceNotFoundException;
@@ -35,6 +36,7 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
     private final PasswordEncoder passwordEncoder;
     private final AgentTerritoryProvider agentTerritoryProvider;
     private final AgentProfileProvider agentProfileProvider;
+    private final JwtUtils jwtUtils;
 
     @Value("${agrilink.default-agent-id}")
     private String defaultAgentId;
@@ -62,22 +64,21 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
         return mapToResponse(farmerRepository.save(farmer));
     }
 
-
     public String farmerLogin(String phoneNumber, String password) {
         Farmer farmer = farmerRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new FarmerNotFoundException(phoneNumber));
 
         if (!farmer.getHasAppAccess()) {
-            throw new ResourceNotFoundException(
+            throw new UnauthorizedActionException(
                     "This account does not have app access. Please contact your agent."
             );
         }
 
         if (!passwordEncoder.matches(password, farmer.getPassword())) {
-            throw new FarmerNotFoundException("Invalid phone number or password");
+            throw new InvalidOperationException("Invalid phone number or password");
         }
 
-        return "Login successful";
+        return jwtUtils.generateToken(farmer.getFarmerId(), "FARMER");
     }
 
     public void changePassword(String farmerId, String oldPassword, String newPassword) {

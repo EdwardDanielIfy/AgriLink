@@ -3,6 +3,7 @@ package com.agrilink.buyer;
 import com.agrilink.buyer.dto.*;
 import com.agrilink.buyer.exceptions.BuyerNotFoundException;
 import com.agrilink.buyer.exceptions.DuplicateBuyerPhoneException;
+import com.agrilink.shared.config.JwtUtils;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.shared.dto.ChangePasswordRequest;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ public class BuyerServices {
 
     private final BuyerRepository buyerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
     public BuyerResponse register(BuyerRegisterRequest request) {
         if (buyerRepository.existsByPhoneNumber(request.getPhoneNumber())) {
@@ -40,7 +42,7 @@ public class BuyerServices {
             throw new InvalidOperationException("Invalid phone number or password");
         }
 
-        return "Login successful";
+        return jwtUtils.generateToken(buyer.getBuyerId(), "BUYER");
     }
 
     public void changePassword(String buyerId, ChangePasswordRequest request) {

@@ -12,6 +12,7 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: true
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
@@ -21,17 +22,23 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  jackson:
+    mapper:
+      accept-case-insensitive-enums: true
+
 server:
   port: 8080
+
+jwt:
+  secret: agrilink-super-secret-key-minimum-32-characters-long
+  expiration: 86400000
 
 agrilink:
   default-agent-id: AGA-ADMIN001
   commission-rate: 0.05
 
-  jpa:
-    open-in-view: false
+africastalking:
+  username: sandbox
+  api-key: ${AFRICASTALKING_API_KEY}
+  sender-id: AgriLink
 
-    africastalking:
-      username: your_username
-      api-key: ${AFRICASTALKING_API_KEY}
-      sender-id: AgriLink

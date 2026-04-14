@@ -1,14 +1,20 @@
 package com.agrilink.sms;
 
+import com.africastalking.AfricasTalking;
+import com.africastalking.SmsService;
 import com.agrilink.farmer.Farmer;
 import com.agrilink.farmer.FarmerServices;
+import com.agrilink.produce.Produce;
+import com.agrilink.produce.ProduceServices;
 import com.agrilink.shared.enums.Language;
 import com.agrilink.sms.strategy.*;
 import com.agrilink.transaction.Transaction;
 import com.agrilink.transaction.TransactionServices;
 import com.agrilink.transaction.TransactionStatus;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,8 +31,25 @@ public class SmsServices {
     private final HausaSmsStrategy hausaSmsStrategy;
     private final YorubaSmsStrategy yorubaSmsStrategy;
     private final IgboSmsStrategy igboSmsStrategy;
+    private final ProduceServices  produceServices;
 
-    // ─── SEND TRANSACTION SMS ─────────────────────────────────────────
+    @Value("${africastalking.username}")
+    private String username;
+
+    @Value("${africastalking.api-key}")
+    private String apiKey;
+
+    @Value("${africastalking.sender-id}")
+    private String senderId;
+
+    private SmsService smsService;
+
+    @PostConstruct
+    public void init() {
+        AfricasTalking.initialize(username, apiKey);
+        smsService = AfricasTalking.getService(AfricasTalking.SERVICE_SMS);
+        log.info("Africa's Talking SMS service initialized for username: {}", username);
+    }
 
     public void sendTransactionSms(String transactionId, TransactionStatus status) {
         try {
@@ -51,7 +74,6 @@ public class SmsServices {
         }
     }
 
-    // ─── SEND DIRECT SMS ──────────────────────────────────────────────
 
     public void sendDirectSms(String phoneNumber, String message,
                               SmsType smsType, String farmerId) {
@@ -66,10 +88,9 @@ public class SmsServices {
         return smsNotificationRepository.findByTransactionId(transactionId);
     }
 
-    // ─── PRIVATE HELPERS ─────────────────────────────────────────────
-
     private void sendSms(String phoneNumber, String message, SmsType smsType,
                          String farmerId, String transactionId) {
+
         SmsNotification notification = new SmsNotification();
         notification.setRecipientPhone(phoneNumber);
         notification.setMessage(message);
@@ -79,15 +100,15 @@ public class SmsServices {
         notification.setDelivered(false);
 
         try {
-            // Africa's Talking integration goes here
-            // For now we log to console as a stub
-            log.info("SMS to {}: {}", phoneNumber, message);
-
+            smsService.send(message, new String[]{phoneNumber}, false);
             notification.setDelivered(true);
+            log.info("SMS sent successfully to {}", phoneNumber);
+
         } catch (Exception e) {
             notification.setDelivered(false);
             notification.setFailureReason(e.getMessage());
             log.error("SMS delivery failed to {}: {}", phoneNumber, e.getMessage());
+
         } finally {
             smsNotificationRepository.save(notification);
         }
@@ -109,18 +130,33 @@ public class SmsServices {
         };
     }
 
-    private String buildDetails(Transaction transaction, SmsType smsType) {
-        return switch (smsType) {
-            case OFFER_RECEIVED -> "Offered price: NGN " + transaction.getOfferedPrice()
-                    + " for " + transaction.getQuantitySold() + " units";
-            case PAYOUT_PROCESSED -> "Net payout: NGN " + transaction.getFarmerNetPayout()
-                    + " after NGN " + transaction.getCommissionAmount() + " commission"
-                    + " and NGN " + transaction.getStorageCostDeducted() + " storage cost";
-            case LOGISTICS_ARRANGED -> "Logistics partner: " + transaction.getLogisticsPartner()
-                    + ". Tracking: " + transaction.getLogisticsTrackingNumber();
-            default -> "";
-        };
-    }
+//    private String buildDetails(Transaction transaction, SmsType smsType) {
+//        return switch (smsType) {
+//            case OFFER_RECEIVED -> "Offered price: NGN " + transaction.getOfferedPrice()
+//                    + " for " + transaction.getQuantitySold() + " units";
+//            case PAYOUT_PROCESSED -> "Net payout: NGN " + transaction.getFarmerNetPayout()
+//                    + " after NGN " + transaction.getCommissionAmount() + " commission"
+//                    + " and NGN " + transaction.getStorageCostDeducted() + " storage cost";
+//            case LOGISTICS_ARRANGED -> "Logistics partner: " + transaction.getLogisticsPartner()
+//                    + ". Tracking: " + transaction.getLogisticsTrackingNumber();
+//            default -> "";
+//        };
+//    }
+private String buildDetails(Transaction transaction, SmsType smsType) {
+    return switch (smsType) {
+        case OFFER_RECEIVED -> {
+            Produce produce = produceServices.findById(transaction.getProduceId());
+            yield "Produce: " + produce.getProduceType() + ", Quantity: " + transaction.getQuantitySold() + " " + produce.getUnit()
+                    + ", Offered price: NGN " + transaction.getOfferedPrice();
+        }
+        case PAYOUT_PROCESSED -> "Net payout: NGN " + transaction.getFarmerNetPayout()
+                + " after NGN " + transaction.getCommissionAmount() + " commission"
+                + " and NGN " + transaction.getStorageCostDeducted() + " storage cost";
+        case LOGISTICS_ARRANGED -> "Logistics partner: " + transaction.getLogisticsPartner()
+                + ". Tracking: " + transaction.getLogisticsTrackingNumber();
+        default -> "";
+    };
+}
 
     private SmsStrategy getStrategy(Language language) {
         if (language == null) return englishSmsStrategy;
@@ -132,4 +168,3 @@ public class SmsServices {
         };
     }
 }
-

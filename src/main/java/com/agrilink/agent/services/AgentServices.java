@@ -7,6 +7,7 @@ import com.agrilink.agent.exceptions.AgentNotFoundException;
 import com.agrilink.agent.exceptions.DuplicateAgentPhoneException;
 import com.agrilink.shared.AgentProfileProvider;
 import com.agrilink.shared.AgentTerritoryProvider;
+import com.agrilink.shared.config.JwtUtils;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ public class AgentServices implements AgentProfileProvider, AgentTerritoryProvid
 
     private final AgentRepository agentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
     public AgentResponse register(AgentRegisterRequest request) {
         if (agentRepository.existsByPhoneNumber(request.getPhoneNumber())) {
@@ -44,7 +46,7 @@ public class AgentServices implements AgentProfileProvider, AgentTerritoryProvid
             throw new InvalidOperationException("Invalid phone number or password");
         }
 
-        return "Login successful";
+        return jwtUtils.generateToken(agent.getAgentId(), "AGENT");
     }
 
     public void changePassword(String agentId, String oldPassword, String newPassword) {
