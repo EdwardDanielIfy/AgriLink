@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    // 404s
+
     @ExceptionHandler({
             FarmerNotFoundException.class,
             AgentNotFoundException.class,
@@ -34,7 +34,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
-    // 409s
     @ExceptionHandler({
             DuplicateFarmerPhoneException.class,
             DuplicateAgentPhoneException.class,
@@ -45,7 +44,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.CONFLICT);
     }
 
-    // 400s
     @ExceptionHandler({
             InvalidOperationException.class,
             InvalidTransactionStateException.class,
@@ -55,13 +53,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
-    // 403s
     @ExceptionHandler(UnauthorizedActionException.class)
     public ResponseEntity<APIResponse> handleUnauthorized(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.FORBIDDEN);
     }
 
-    // validation errors from @Valid
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<APIResponse> handleValidation(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult()
@@ -73,7 +69,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new APIResponse(false, message), HttpStatus.BAD_REQUEST);
     }
 
-    // safety net
     @ExceptionHandler(AgrilinkException.class)
     public ResponseEntity<APIResponse> handleGeneral(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);

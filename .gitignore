@@ -37,3 +37,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Application config with secrets
+src/main/resources/application.yml
+
+# Environment files
+.env
+*.env

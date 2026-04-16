@@ -3,6 +3,8 @@ package com.agrilink.payment;
 import com.agrilink.payment.dto.PaymentInitializeResponse;
 import com.agrilink.payment.dto.PaystackWebhookEvent;
 import com.agrilink.payment.exceptions.PaymentException;
+import com.agrilink.shared.BuyerDetailsProvider;
+import com.agrilink.shared.enums.BankCode;
 import com.agrilink.transaction.Transaction;
 import com.agrilink.transaction.TransactionServices;
 import com.agrilink.transaction.TransactionStatus;
@@ -19,7 +21,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -28,14 +34,13 @@ public class PaymentServices {
 
     private final TransactionServices transactionServices;
     private final ObjectMapper objectMapper;
+    private final BuyerDetailsProvider buyerDetailsProvider;
 
     @Value("${paystack.secret-key}")
     private String paystackSecretKey;
 
     @Value("${paystack.base-url}")
     private String paystackBaseUrl;
-
-    // ─── INITIALIZE PAYMENT ───────────────────────────────────────────
 
     public PaymentInitializeResponse initializePayment(String transactionId) {
         try {
@@ -47,12 +52,12 @@ public class PaymentServices {
                 );
             }
 
-            // amount in kobo (Paystack uses kobo — multiply by 100)
-            long amountInKobo = (long) (transaction.getOfferedPrice()
-                    * transaction.getQuantitySold() * 100);
+            long amountInKobo = (long) (transaction.getOfferedPrice() * transaction.getQuantitySold() * 100);
+
+            String buyerEmail = buyerDetailsProvider.getBuyerEmail(transaction.getBuyerId());
 
             String requestBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
-                put("email", "buyer@agrilink.com"); // will be replaced with real buyer email after buyer module update
+                put("email", buyerEmail); // will be replaced with real buyer email after buyer module update
                 put("amount", amountInKobo);
                 put("reference", transaction.getTransactionId());
                 put("callback_url", "https://agrilink.com/payment/callback");
@@ -100,18 +105,14 @@ public class PaymentServices {
         }
     }
 
-    // ─── HANDLE WEBHOOK ───────────────────────────────────────────────
-
     public void handleWebhook(String payload, String paystackSignature) {
         try {
-            // verify the webhook is genuinely from Paystack
             if (!verifyWebhookSignature(payload, paystackSignature)) {
                 log.warn("Invalid Paystack webhook signature — ignoring");
                 return;
             }
 
-            PaystackWebhookEvent event = objectMapper.readValue(payload,
-                    PaystackWebhookEvent.class);
+            PaystackWebhookEvent event = objectMapper.readValue(payload, PaystackWebhookEvent.class);
 
             log.info("Paystack webhook received: event={}", event.getEvent());
 
@@ -126,27 +127,17 @@ public class PaymentServices {
         }
     }
 
-    // ─── FARMER PAYOUT ────────────────────────────────────────────────
-
     public void processFarmerPayout(String transactionId) {
         try {
             Transaction transaction = transactionServices.findById(transactionId);
 
             if (transaction.getStatus() != TransactionStatus.DELIVERED) {
-                throw new PaymentException(
-                        "Cannot process payout. Delivery not confirmed yet."
-                );
+                throw new PaymentException("Cannot process payout. Delivery not confirmed yet.");
             }
 
-            // Step 1 — create transfer recipient with farmer's bank details
             String recipientCode = createTransferRecipient(transaction);
-
-            // Step 2 — initiate transfer to farmer
             initiateTransfer(transaction, recipientCode);
-
-            // Step 3 — trigger payout processing in transaction module
             transactionServices.processPayout(transactionId);
-
             log.info("Farmer payout processed for transaction: {}", transactionId);
 
         } catch (PaymentException e) {
@@ -158,19 +149,17 @@ public class PaymentServices {
         }
     }
 
-    // ─── PRIVATE HELPERS ─────────────────────────────────────────────
-
     private String createTransferRecipient(Transaction transaction) throws Exception {
-        
-        var farmer = transactionServices.getFarmerForTransaction(
-                transaction.getFarmerId());
+        var farmer = transactionServices.getFarmerForTransaction(transaction.getFarmerId());
+
+        String bankCode = BankCode.fromDisplayName(farmer.getBankName()).getCode();
 
         String requestBody = objectMapper.writeValueAsString(
-                new java.util.HashMap<>() {{
+                new HashMap<>() {{
                     put("type", "nuban");
                     put("name", farmer.getBankAccountName());
                     put("account_number", farmer.getBankAccountNumber());
-                    put("bank_code", farmer.getBankName());
+                    put("bank_code", bankCode);
                     put("currency", "NGN");
                 }});
 
@@ -192,8 +181,7 @@ public class PaymentServices {
         return (String) data.get("recipient_code");
     }
 
-    private void initiateTransfer(Transaction transaction,
-                                  String recipientCode) throws Exception {
+    private void initiateTransfer(Transaction transaction, String recipientCode) throws Exception {
         long amountInKobo = (long) (transaction.getFarmerNetPayout() * 100);
 
         String requestBody = objectMapper.writeValueAsString(
@@ -213,29 +201,22 @@ public class PaymentServices {
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
-        HttpResponse<String> response = client.send(request,
-                HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new PaymentException("Paystack transfer failed: "
-                    + response.body());
+            throw new PaymentException("Paystack transfer failed: " + response.body());
         }
 
         log.info("Transfer initiated to farmer for transaction: {}",
                 transaction.getTransactionId());
     }
 
-    private boolean verifyWebhookSignature(String payload,
-                                           String paystackSignature) {
+    private boolean verifyWebhookSignature(String payload, String paystackSignature) {
         try {
             Mac mac = Mac.getInstance("HmacSHA512");
-            SecretKeySpec secretKey = new SecretKeySpec(
-                    paystackSecretKey.getBytes(StandardCharsets.UTF_8),
-                    "HmacSHA512"
-            );
+            SecretKeySpec secretKey = new SecretKeySpec(paystackSecretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
             mac.init(secretKey);
-            byte[] hash = mac.doFinal(
-                    payload.getBytes(StandardCharsets.UTF_8));
+            byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
             String computedSignature = HexFormat.of().formatHex(hash);
             return computedSignature.equals(paystackSignature);
         } catch (Exception e) {
@@ -243,4 +224,11 @@ public class PaymentServices {
             return false;
         }
     }
+
+    public List<String> getAvailableBanks() {
+        return Arrays.stream(BankCode.values())
+                .map(BankCode::getDisplayName)
+                .collect(Collectors.toList());
+    }
+
 }

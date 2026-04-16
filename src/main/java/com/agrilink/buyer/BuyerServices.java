@@ -3,6 +3,7 @@ package com.agrilink.buyer;
 import com.agrilink.buyer.dto.*;
 import com.agrilink.buyer.exceptions.BuyerNotFoundException;
 import com.agrilink.buyer.exceptions.DuplicateBuyerPhoneException;
+import com.agrilink.shared.BuyerDetailsProvider;
 import com.agrilink.shared.config.JwtUtils;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.shared.dto.ChangePasswordRequest;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class BuyerServices {
+public class BuyerServices implements BuyerDetailsProvider {
 
     private final BuyerRepository buyerRepository;
     private final PasswordEncoder passwordEncoder;
@@ -98,5 +99,12 @@ public class BuyerServices {
                 .location(buyer.getLocation())
                 .registeredAt(buyer.getRegisteredAt())
                 .build();
+    }
+
+    @Override
+    public String getBuyerEmail(String buyerId) {
+        Buyer buyer = buyerRepository.findById(buyerId)
+                .orElseThrow(() -> new BuyerNotFoundException(buyerId));
+        return buyer.getEmail();
     }
 }

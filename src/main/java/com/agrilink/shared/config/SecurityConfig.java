@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-public class PasswordConfig {
+public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
@@ -39,7 +39,9 @@ public class PasswordConfig {
                                 "/api/buyers/register",
                                 "/api/buyers/login",
                                 "/api/sms/reply",
-                                "/api/marketplace/listings/**"
+                                "/api/marketplace/listings/**",
+                                "/api/payments/webhook",
+                                "/api/payments/banks"
                         ).permitAll()
                         // agent only
                         .requestMatchers("/api/agents/**").hasRole("AGENT")
