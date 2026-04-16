@@ -34,10 +34,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/farmers/register",
                                 "/api/farmers/login",
-                                "/api/agents/register",
                                 "/api/agents/login",
                                 "/api/buyers/register",
                                 "/api/buyers/login",
+                                "/api/admin/login",
                                 "/api/sms/reply",
                                 "/api/marketplace/listings/**",
                                 "/api/payments/webhook",
@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/farmers/**").hasRole("FARMER")
                         // buyer only
                         .requestMatchers("/api/buyers/**").hasRole("BUYER")
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // everything else needs authentication
                         .anyRequest().authenticated()
                 )

@@ -21,11 +21,6 @@ public class AgentController {
     private final AgentServices agentServices;
     private final AgentFarmerServices agentFarmerServices;
 
-    @PostMapping("/register")
-    public ResponseEntity<APIResponse> register(@Valid @RequestBody AgentRegisterRequest request) {
-        return new ResponseEntity<>(new APIResponse(true, agentServices.register(request)), HttpStatus.CREATED);
-    }
-
     @PostMapping("/login")
     public ResponseEntity<APIResponse> login(@Valid @RequestBody AgentLoginRequest request) {
         return new ResponseEntity<>(new APIResponse(true, agentServices.agentLogin(request.getPhoneNumber(), request.getPassword())), HttpStatus.OK);
