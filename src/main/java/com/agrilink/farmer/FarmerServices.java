@@ -7,6 +7,7 @@ import com.agrilink.farmer.dto.FarmerSelfRegisterRequest;
 import com.agrilink.farmer.dto.UpdateFarmerInfoRequest;
 import com.agrilink.farmer.exceptions.DuplicateFarmerPhoneException;
 import com.agrilink.farmer.exceptions.FarmerNotFoundException;
+import com.agrilink.farmer.utils.Mapper;
 import com.agrilink.shared.AgentProfileProvider;
 import com.agrilink.shared.AgentTerritoryProvider;
 import com.agrilink.shared.FarmerLookupProvider;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 import static com.agrilink.farmer.utils.Mapper.mapToResponse;
@@ -245,5 +247,18 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
         farmerRepository.save(farmer);
     }
 
+    public List<FarmerRegistrationResponse> getAllFarmers() {
+        return farmerRepository.findAll()
+                .stream()
+                .map(Mapper::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public FarmerRegistrationResponse assignAgent(String farmerId, String agentId) {
+        Farmer farmer = farmerRepository.findById(farmerId)
+                .orElseThrow(() -> new FarmerNotFoundException(farmerId));
+        farmer.setRegisteredByAgentId(agentId);
+        return mapToResponse(farmerRepository.save(farmer));
+    }
 
 }

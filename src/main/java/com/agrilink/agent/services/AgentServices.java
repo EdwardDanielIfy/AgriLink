@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -106,4 +108,11 @@ public class AgentServices implements AgentProfileProvider, AgentTerritoryProvid
                 .map(Agent::getAgentId)
                 .orElse(null);
     }
+
+    public List<AgentResponse> getAllAgents() {
+        return agentRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
+}

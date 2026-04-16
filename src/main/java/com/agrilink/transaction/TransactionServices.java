@@ -273,4 +273,11 @@ public class TransactionServices {
     public Farmer getFarmerForTransaction(String farmerId) {
         return farmerServices.findById(farmerId);
     }
+
+    public List<TransactionResponse> getAllTransactions() {
+        return transactionRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 }
