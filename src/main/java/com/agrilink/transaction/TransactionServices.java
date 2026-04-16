@@ -48,6 +48,9 @@ public class TransactionServices {
 
         Transaction saved = transactionRepository.save(transaction);
 
+        saved.setStatus(TransactionStatus.AWAITING_RESPONSE);
+        saved = transactionRepository.save(saved);
+
         eventPublisher.publishEvent(new TransactionStatusChangedEvent(this, saved.getTransactionId(), saved.getStatus()));
 
         return mapToResponse(saved);
@@ -265,5 +268,9 @@ public class TransactionServices {
                 .findFirst()
                 .map(Transaction::getTransactionId)
                 .orElse(null);
+    }
+
+    public Farmer getFarmerForTransaction(String farmerId) {
+        return farmerServices.findById(farmerId);
     }
 }

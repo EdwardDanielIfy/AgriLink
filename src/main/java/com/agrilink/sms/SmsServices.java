@@ -7,6 +7,7 @@ import com.agrilink.farmer.FarmerServices;
 import com.agrilink.produce.Produce;
 import com.agrilink.produce.ProduceServices;
 import com.agrilink.shared.enums.Language;
+import com.agrilink.shared.events.SmsReplyReceivedEvent;
 import com.agrilink.sms.strategy.*;
 import com.agrilink.transaction.Transaction;
 import com.agrilink.transaction.TransactionServices;
@@ -15,6 +16,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,6 +34,7 @@ public class SmsServices {
     private final YorubaSmsStrategy yorubaSmsStrategy;
     private final IgboSmsStrategy igboSmsStrategy;
     private final ProduceServices  produceServices;
+    private ApplicationEventPublisher eventPublisher;
 
     @Value("${africastalking.username}")
     private String username;
@@ -130,18 +133,6 @@ public class SmsServices {
         };
     }
 
-//    private String buildDetails(Transaction transaction, SmsType smsType) {
-//        return switch (smsType) {
-//            case OFFER_RECEIVED -> "Offered price: NGN " + transaction.getOfferedPrice()
-//                    + " for " + transaction.getQuantitySold() + " units";
-//            case PAYOUT_PROCESSED -> "Net payout: NGN " + transaction.getFarmerNetPayout()
-//                    + " after NGN " + transaction.getCommissionAmount() + " commission"
-//                    + " and NGN " + transaction.getStorageCostDeducted() + " storage cost";
-//            case LOGISTICS_ARRANGED -> "Logistics partner: " + transaction.getLogisticsPartner()
-//                    + ". Tracking: " + transaction.getLogisticsTrackingNumber();
-//            default -> "";
-//        };
-//    }
 private String buildDetails(Transaction transaction, SmsType smsType) {
     return switch (smsType) {
         case OFFER_RECEIVED -> {
@@ -166,5 +157,34 @@ private String buildDetails(Transaction transaction, SmsType smsType) {
             case IGBO -> igboSmsStrategy;
             default -> englishSmsStrategy;
         };
+    }
+
+    public void handleFarmerReply(String from, String text) {
+        log.info("SMS reply received from: {} text: {}", from, text);
+
+        try {
+            String trimmed = text.trim();
+
+            if (!trimmed.equals("1") && !trimmed.equals("2")) {
+                log.warn("Unrecognized reply '{}' from {}", trimmed, from);
+                return;
+            }
+
+            String normalizedPhone = normalizePhone(from);
+
+            eventPublisher.publishEvent(
+                    new SmsReplyReceivedEvent(this, normalizedPhone, trimmed)
+            );
+
+        } catch (Exception e) {
+            log.error("Error processing SMS reply from {}: {}", from, e.getMessage());
+        }
+    }
+
+    private String normalizePhone(String from) {
+        if (from.startsWith("+")) {
+            return from.substring(1);
+        }
+        return from;
     }
 }
