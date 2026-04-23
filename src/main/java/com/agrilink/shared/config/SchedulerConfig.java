@@ -26,8 +26,6 @@ public class SchedulerConfig {
     private final FarmerServices farmerServices;
     private final TransactionServices transactionServices;
 
-    // ─── STORAGE COST ACCRUAL — runs every day at midnight ───────────
-
     @Scheduled(cron = "0 0 0 * * *")
     public void accrueStorageCosts() {
         log.info("Running storage cost accrual job at {}", LocalDateTime.now());
@@ -72,8 +70,6 @@ public class SchedulerConfig {
             }
         }
     }
-
-    // ─── OFFER EXPIRY — runs every hour ──────────────────────────────
 
     @Scheduled(cron = "0 0 * * * *")
     public void expireOverdueOffers() {

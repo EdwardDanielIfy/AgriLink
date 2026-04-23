@@ -15,6 +15,7 @@ import com.agrilink.transaction.exceptions.InvalidTransactionStateException;
 import com.agrilink.transaction.exceptions.TransactionNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -69,8 +70,18 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new APIResponse(false, message), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<APIResponse> handleMessageNotReadable(HttpMessageNotReadableException ex) {
+        return new ResponseEntity<>(new APIResponse(false, "Invalid request body or format"), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(AgrilinkException.class)
-    public ResponseEntity<APIResponse> handleGeneral(AgrilinkException ex) {
+    public ResponseEntity<APIResponse> handleAgrilinkException(AgrilinkException ex) {
         return new ResponseEntity<>(new APIResponse(false, ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<APIResponse> handleGeneral(Exception ex) {
+        return new ResponseEntity<>(new APIResponse(false, "An unexpected error occurred: " + ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

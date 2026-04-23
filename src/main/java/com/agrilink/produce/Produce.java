@@ -21,7 +21,6 @@ public class Produce {
     @Column(nullable = false)
     private String farmerId;
 
-    @Column(nullable = false)
     private String storageId;
 
     private String agentId;
@@ -41,7 +40,7 @@ public class Produce {
     private Double referencePrice;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
+    @Column(nullable = false, columnDefinition = "VARCHAR(30)")
     private ProduceStatus status;
 
     private Double accruedStorageCost;
@@ -59,7 +58,9 @@ public class Produce {
                 + "-" + System.currentTimeMillis();
         this.loggedAt = LocalDateTime.now();
         this.lastStorageCostUpdate = LocalDateTime.now();
-        this.status = ProduceStatus.AVAILABLE;
+        this.status = (this.storageId == null)
+                ? ProduceStatus.PENDING_HUB_ASSIGNMENT
+                : ProduceStatus.AVAILABLE;
         if (this.accruedStorageCost == null) {
             this.accruedStorageCost = 0.0;
         }

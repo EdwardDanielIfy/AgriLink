@@ -21,8 +21,7 @@ public class TransactionController {
     }
 
     @PutMapping("/{transactionId}/confirm-delivery")
-    public ResponseEntity<APIResponse> confirmDelivery(
-            @PathVariable String transactionId) {
+    public ResponseEntity<APIResponse> confirmDelivery(@PathVariable String transactionId) {
         return new ResponseEntity<>(new APIResponse(true, transactionServices.confirmDelivery(transactionId)), HttpStatus.OK);
     }
 

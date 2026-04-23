@@ -20,12 +20,8 @@ public class PaymentController {
     private final PaymentServices paymentServices;
 
     @PostMapping("/initialize/{transactionId}")
-    public ResponseEntity<APIResponse> initializePayment(
-            @PathVariable String transactionId) {
-        return new ResponseEntity<>(
-                new APIResponse(true, paymentServices.initializePayment(transactionId)),
-                HttpStatus.OK
-        );
+    public ResponseEntity<APIResponse> initializePayment(@PathVariable String transactionId) {
+        return new ResponseEntity<>(new APIResponse(true, paymentServices.initializePayment(transactionId)), HttpStatus.OK);
     }
 
     @PostMapping("/webhook")
@@ -37,20 +33,13 @@ public class PaymentController {
     }
 
     @PostMapping("/payout/{transactionId}")
-    public ResponseEntity<APIResponse> processFarmerPayout(
-            @PathVariable String transactionId) {
+    public ResponseEntity<APIResponse> processFarmerPayout(@PathVariable String transactionId) {
         paymentServices.processFarmerPayout(transactionId);
-        return new ResponseEntity<>(
-                new APIResponse(true, "Payout processed successfully"),
-                HttpStatus.OK
-        );
+        return new ResponseEntity<>(new APIResponse(true, "Payout processed successfully"), HttpStatus.OK);
     }
 
     @GetMapping("/banks")
     public ResponseEntity<APIResponse> getAvailableBanks() {
-        return new ResponseEntity<>(
-                new APIResponse(true, paymentServices.getAvailableBanks()),
-                HttpStatus.OK
-        );
+        return new ResponseEntity<>(new APIResponse(true, paymentServices.getAvailableBanks()), HttpStatus.OK);
     }
 }

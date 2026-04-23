@@ -16,6 +16,7 @@ import com.agrilink.shared.config.JwtUtils;
 import com.agrilink.shared.enums.Language;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.shared.exceptions.ResourceNotFoundException;
+import com.agrilink.shared.dto.AuthResponse;
 import com.agrilink.shared.exceptions.UnauthorizedActionException;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
     @Value("${agrilink.default-agent-id}")
     private String defaultAgentId;
 
-    public FarmerRegistrationResponse register(FarmerSelfRegisterRequest request) {
+    public AuthResponse register(FarmerSelfRegisterRequest request) {
         if (farmerRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw new DuplicateFarmerPhoneException(request.getPhoneNumber());
         }
@@ -63,24 +64,32 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
         farmer.setBankAccountNumber(request.getBankAccountNumber());
         farmer.setBankName(request.getBankName());
 
-        return mapToResponse(farmerRepository.save(farmer));
+        Farmer savedFarmer = farmerRepository.save(farmer);
+        String token = jwtUtils.generateToken(savedFarmer.getFarmerId(), "FARMER");
+        return AuthResponse.builder()
+                .token(token)
+                .user(mapToResponse(savedFarmer))
+                .build();
     }
 
-    public String farmerLogin(String phoneNumber, String password) {
+
+    public AuthResponse farmerLogin(String phoneNumber, String password) {
         Farmer farmer = farmerRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new FarmerNotFoundException(phoneNumber));
 
         if (!farmer.getHasAppAccess()) {
-            throw new UnauthorizedActionException(
-                    "This account does not have app access. Please contact your agent."
-            );
+            throw new UnauthorizedActionException("This account does not have app access. Please contact your agent.");
         }
 
         if (!passwordEncoder.matches(password, farmer.getPassword())) {
             throw new InvalidOperationException("Invalid phone number or password");
         }
 
-        return jwtUtils.generateToken(farmer.getFarmerId(), "FARMER");
+        String token = jwtUtils.generateToken(farmer.getFarmerId(), "FARMER");
+        return AuthResponse.builder()
+                .token(token)
+                .user(mapToResponse(farmer))
+                .build();
     }
 
     public void changePassword(String farmerId, String oldPassword, String newPassword) {
@@ -175,6 +184,7 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
         if (request.getPreferredLanguage() != null) {
             farmer.setPreferredLanguage(Language.valueOf(request.getPreferredLanguage().toUpperCase()));
         }
+        farmer.setFarmSize(request.getFarmSize());
         farmer.setHasAppAccess(request.getHasAppAccess() != null ? request.getHasAppAccess() : false);
         farmer.setRegisteredByAgentId(request.getRegisteredByAgentId());
         farmer.setBankAccountNumber(request.getBankAccountNumber());
@@ -199,9 +209,7 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
                 .orElseThrow(() -> new FarmerNotFoundException(farmerId));
 
         if (!agentId.equals(farmer.getRegisteredByAgentId())) {
-            throw new UnauthorizedActionException(
-                    "You are not authorized to update this farmer"
-            );
+            throw new UnauthorizedActionException("You are not authorized to update this farmer");
         }
 
         if (request.getFullName() != null) {
@@ -214,9 +222,7 @@ public class FarmerServices implements FarmerRegistrationProvider, FarmerLookupP
             farmer.setPrimaryCrop(request.getPrimaryCrop());
         }
         if (request.getPreferredLanguage() != null) {
-            farmer.setPreferredLanguage(
-                    Language.valueOf(request.getPreferredLanguage().toUpperCase())
-            );
+            farmer.setPreferredLanguage(Language.valueOf(request.getPreferredLanguage().toUpperCase()));
         }
         if (request.getBankAccountNumber() != null) {
             farmer.setBankAccountNumber(request.getBankAccountNumber());

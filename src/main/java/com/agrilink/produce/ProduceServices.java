@@ -32,7 +32,9 @@ public class ProduceServices implements ProduceCountProvider {
     public ProduceResponse logProduceByAgent(String agentId, String farmerId, ProduceRequest request) {
         agentServices.findById(agentId);
         farmerServices.getFarmerByIdForAgent(farmerId, agentId);
-        validateSlotAvailability(request.getStorageId());
+        if (request.getStorageId() != null) {
+            validateSlotAvailability(request.getStorageId());
+        }
         request.setAgentId(agentId);
         request.setFarmerId(farmerId);
 
@@ -47,7 +49,9 @@ public class ProduceServices implements ProduceCountProvider {
                     "This farmer does not have app access to log produce directly"
             );
         }
-        validateSlotAvailability(request.getStorageId());
+        if (request.getStorageId() != null) {
+            validateSlotAvailability(request.getStorageId());
+        }
 
         request.setFarmerId(farmerId);
         request.setAgentId(null);
@@ -100,7 +104,9 @@ public class ProduceServices implements ProduceCountProvider {
         Produce produce = produceRepository.findById(produceId)
                 .orElseThrow(() -> new ProduceNotFoundException(produceId));
 
-        if (produce.getStatus() != ProduceStatus.AVAILABLE) {
+        if (produce.getStatus() != ProduceStatus.AVAILABLE && 
+            produce.getStatus() != ProduceStatus.PENDING_HUB_ASSIGNMENT &&
+            produce.getStatus() != ProduceStatus.OFFER_PENDING) {
             throw new ProduceNotAvailableException(produceId);
         }
 
@@ -164,6 +170,10 @@ public class ProduceServices implements ProduceCountProvider {
     }
 
     private ProduceResponse saveProduce(ProduceRequest request) {
+
+        if (request.getStorageId() != null) {
+            validateSlotAvailability(request.getStorageId());
+        }
         Produce produce = new Produce();
         produce.setFarmerId(request.getFarmerId());
         produce.setStorageId(request.getStorageId());
@@ -175,6 +185,15 @@ public class ProduceServices implements ProduceCountProvider {
         produce.setReferencePrice(request.getReferencePrice());
         produce.setExpectedPickupDate(request.getExpectedPickupDate());
 
+        return mapToResponse(produceRepository.save(produce));
+    }
+
+    public ProduceResponse assignStorage(String produceId, String storageId) {
+        Produce produce = produceRepository.findById(produceId)
+                .orElseThrow(() -> new ProduceNotFoundException(produceId));
+
+        validateSlotAvailability(storageId);
+        produce.setStorageId(storageId);
         return mapToResponse(produceRepository.save(produce));
     }
 

@@ -34,7 +34,7 @@ public class SmsServices {
     private final YorubaSmsStrategy yorubaSmsStrategy;
     private final IgboSmsStrategy igboSmsStrategy;
     private final ProduceServices  produceServices;
-    private ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${africastalking.username}")
     private String username;
@@ -78,8 +78,7 @@ public class SmsServices {
     }
 
 
-    public void sendDirectSms(String phoneNumber, String message,
-                              SmsType smsType, String farmerId) {
+    public void sendDirectSms(String phoneNumber, String message, SmsType smsType, String farmerId) {
         sendSms(phoneNumber, message, smsType, farmerId, null);
     }
 
@@ -91,8 +90,12 @@ public class SmsServices {
         return smsNotificationRepository.findByTransactionId(transactionId);
     }
 
-    private void sendSms(String phoneNumber, String message, SmsType smsType,
-                         String farmerId, String transactionId) {
+    private void sendSms(String phoneNumber, String message, SmsType smsType, String farmerId, String transactionId) {
+
+        if (username == null || username.startsWith("${") || apiKey == null || apiKey.startsWith("${")) {
+            log.error("SMS credentials not initialized! Check AFRICASTALKING_USERNAME and AFRICASTALKING_API_KEY env vars.");
+            return;
+        }
 
         SmsNotification notification = new SmsNotification();
         notification.setRecipientPhone(phoneNumber);
@@ -103,17 +106,40 @@ public class SmsServices {
         notification.setDelivered(false);
 
         try {
-            smsService.send(message, new String[]{phoneNumber}, false);
+            String targetPhone = phoneNumber;
+            if (!targetPhone.startsWith("+")) {
+                if (targetPhone.startsWith("234")) {
+                    targetPhone = "+" + targetPhone;
+                } else if (targetPhone.startsWith("0")) {
+                    targetPhone = "+234" + targetPhone.substring(1);
+                } else {
+                    targetPhone = "+234" + targetPhone; // Assume Nigeria
+                }
+            }
+
+            log.info("Attempting to send SMS to {}: {}", targetPhone, message);
+            
+            if (senderId != null && !senderId.isEmpty() && !senderId.startsWith("${")) {
+                smsService.send(message, senderId, new String[]{targetPhone}, false);
+            } else {
+                smsService.send(message, new String[]{targetPhone}, false);
+            }
+
             notification.setDelivered(true);
-            log.info("SMS sent successfully to {}", phoneNumber);
+            log.info("SMS request submitted successfully to Africa's Talking for {}", targetPhone);
 
         } catch (Exception e) {
             notification.setDelivered(false);
             notification.setFailureReason(e.getMessage());
-            log.error("SMS delivery failed to {}: {}", phoneNumber, e.getMessage());
+            log.error("SMS delivery failed to {}. Error: {}", phoneNumber, e.getMessage());
+            e.printStackTrace();
 
         } finally {
-            smsNotificationRepository.save(notification);
+            try {
+                smsNotificationRepository.save(notification);
+            } catch (Exception ex) {
+                log.error("Failed to save SMS notification log: {}", ex.getMessage());
+            }
         }
     }
 

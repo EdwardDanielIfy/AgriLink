@@ -19,6 +19,8 @@ public class FarmerRegistrationRequest {
 
     private String primaryCrop;
 
+    private Double farmSize;
+
     private String preferredLanguage;
 
     private Boolean hasAppAccess;

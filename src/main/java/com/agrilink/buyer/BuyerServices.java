@@ -8,6 +8,7 @@ import com.agrilink.shared.config.JwtUtils;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.shared.dto.ChangePasswordRequest;
 import lombok.RequiredArgsConstructor;
+import com.agrilink.shared.dto.AuthResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,7 @@ public class BuyerServices implements BuyerDetailsProvider {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
-    public BuyerResponse register(BuyerRegisterRequest request) {
+    public AuthResponse register(BuyerRegisterRequest request) {
         if (buyerRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw new DuplicateBuyerPhoneException(request.getPhoneNumber());
         }
@@ -32,10 +33,16 @@ public class BuyerServices implements BuyerDetailsProvider {
         buyer.setBusinessName(request.getBusinessName());
         buyer.setLocation(request.getLocation());
 
-        return mapToResponse(buyerRepository.save(buyer));
+        Buyer savedBuyer = buyerRepository.save(buyer);
+        String token = jwtUtils.generateToken(savedBuyer.getBuyerId(), "BUYER");
+        return AuthResponse.builder()
+                .token(token)
+                .user(mapToResponse(savedBuyer))
+                .build();
     }
 
-    public String login(String phoneNumber, String password) {
+
+    public AuthResponse login(String phoneNumber, String password) {
         Buyer buyer = buyerRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new BuyerNotFoundException(phoneNumber));
 
@@ -43,7 +50,11 @@ public class BuyerServices implements BuyerDetailsProvider {
             throw new InvalidOperationException("Invalid phone number or password");
         }
 
-        return jwtUtils.generateToken(buyer.getBuyerId(), "BUYER");
+        String token = jwtUtils.generateToken(buyer.getBuyerId(), "BUYER");
+        return AuthResponse.builder()
+                .token(token)
+                .user(mapToResponse(buyer))
+                .build();
     }
 
     public void changePassword(String buyerId, ChangePasswordRequest request) {

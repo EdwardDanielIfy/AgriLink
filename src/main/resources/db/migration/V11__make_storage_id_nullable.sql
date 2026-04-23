@@ -1,0 +1,2 @@
+ALTER TABLE produce
+    MODIFY COLUMN storage_id VARCHAR(100) NULL;

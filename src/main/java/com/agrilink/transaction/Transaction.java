@@ -67,8 +67,7 @@ public class Transaction {
 
     @PrePersist
     protected void onCreate() {
-        this.transactionId = "AGT-" + this.buyerId.replaceAll("[^0-9]", "")
-                + "-" + System.currentTimeMillis();
+        this.transactionId = "AGT-" + this.buyerId.replaceAll("[^0-9]", "") + "-" + System.currentTimeMillis();
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.status = TransactionStatus.OFFER_MADE;

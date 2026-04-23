@@ -16,4 +16,6 @@ public class ProduceListingResponse {
     private String storageLocation;
     private String territory;
     private String partnerStorageName;
+    private String farmerId;
+    private com.agrilink.shared.enums.ProduceStatus status;
 }

@@ -1,11 +1,13 @@
 package com.agrilink.shared;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
-@Getter
+@Data
     @AllArgsConstructor
+    @NoArgsConstructor
     public class APIResponse {
 
         private boolean success;

@@ -30,6 +30,9 @@ import java.time.LocalDateTime;
         @Column(name = "primary_crop")
         private String primaryCrop;
 
+        @Column(name = "farm_size")
+        private Double farmSize;
+
         @Enumerated(EnumType.STRING)
         @Column(name = "preferred_language", columnDefinition = "VARCHAR(10)")
         private Language preferredLanguage;

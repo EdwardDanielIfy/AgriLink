@@ -18,30 +18,18 @@ public class SmsController {
     private final SmsServices smsServices;
 
     @PostMapping("/reply")
-    public ResponseEntity<String> handleSmsReply(
-            @RequestParam String from,
-            @RequestParam String text,
-            @RequestParam(required = false) String to,
-            @RequestParam(required = false) String date) {
+    public ResponseEntity<String> handleSmsReply(@RequestParam String from, @RequestParam String text, @RequestParam(required = false) String to, @RequestParam(required = false) String date) {
         smsServices.handleFarmerReply(from, text);
         return ResponseEntity.ok("OK");
     }
 
     @GetMapping("/farmer/{farmerId}")
-    public ResponseEntity<APIResponse> getSmsHistoryByFarmer(
-            @PathVariable String farmerId) {
-        return new ResponseEntity<>(
-                new APIResponse(true, smsServices.getSmsHistoryByFarmer(farmerId)),
-                HttpStatus.OK
-        );
+    public ResponseEntity<APIResponse> getSmsHistoryByFarmer(@PathVariable String farmerId) {
+        return new ResponseEntity<>(new APIResponse(true, smsServices.getSmsHistoryByFarmer(farmerId)), HttpStatus.OK);
     }
 
     @GetMapping("/transaction/{transactionId}")
-    public ResponseEntity<APIResponse> getSmsHistoryByTransaction(
-            @PathVariable String transactionId) {
-        return new ResponseEntity<>(
-                new APIResponse(true, smsServices.getSmsHistoryByTransaction(transactionId)),
-                HttpStatus.OK
-        );
+    public ResponseEntity<APIResponse> getSmsHistoryByTransaction(@PathVariable String transactionId) {
+        return new ResponseEntity<>(new APIResponse(true, smsServices.getSmsHistoryByTransaction(transactionId)), HttpStatus.OK);
     }
 }

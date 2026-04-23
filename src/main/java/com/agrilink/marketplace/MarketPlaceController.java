@@ -19,6 +19,7 @@ public class MarketPlaceController {
         return new ResponseEntity<>(new APIResponse(true, marketplaceServices.getAllAvailableListings()), HttpStatus.OK);
     }
 
+
     @GetMapping("/listings/type/{produceType}")
     public ResponseEntity<APIResponse> getListingsByType(@PathVariable String produceType) {
         return new ResponseEntity<>(new APIResponse(true, marketplaceServices.getListingsByType(produceType)), HttpStatus.OK);

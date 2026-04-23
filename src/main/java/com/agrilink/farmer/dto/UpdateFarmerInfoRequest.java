@@ -8,6 +8,7 @@ import lombok.Data;
         private String fullName;
         private String location;
         private String primaryCrop;
+//        private Double farmSize;
         private String preferredLanguage;
         private String phoneNumber;
         private String bankName;

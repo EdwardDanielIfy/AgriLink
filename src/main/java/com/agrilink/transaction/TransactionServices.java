@@ -232,7 +232,26 @@ public class TransactionServices {
                 .orElseThrow(() -> new TransactionNotFoundException(transactionId));
     }
 
-    // ─── PRIVATE HELPERS ─────────────────────────────────────────────
+    public String findAwaitingResponseTransactionByPhone(String phoneNumber) {
+        Farmer farmer = farmerServices.findByPhoneNumber(phoneNumber);
+        return transactionRepository
+                .findByFarmerIdAndStatus(farmer.getFarmerId(), TransactionStatus.AWAITING_RESPONSE)
+                .stream()
+                .findFirst()
+                .map(Transaction::getTransactionId)
+                .orElse(null);
+    }
+
+    public Farmer getFarmerForTransaction(String farmerId) {
+        return farmerServices.findById(farmerId);
+    }
+
+    public List<TransactionResponse> getAllTransactions() {
+        return transactionRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 
     private TransactionResponse mapToResponse(Transaction transaction) {
         return TransactionResponse.builder()
@@ -260,24 +279,5 @@ public class TransactionServices {
                 .build();
     }
 
-    public String findAwaitingResponseTransactionByPhone(String phoneNumber) {
-        Farmer farmer = farmerServices.findByPhoneNumber(phoneNumber);
-        return transactionRepository
-                .findByFarmerIdAndStatus(farmer.getFarmerId(), TransactionStatus.AWAITING_RESPONSE)
-                .stream()
-                .findFirst()
-                .map(Transaction::getTransactionId)
-                .orElse(null);
-    }
 
-    public Farmer getFarmerForTransaction(String farmerId) {
-        return farmerServices.findById(farmerId);
-    }
-
-    public List<TransactionResponse> getAllTransactions() {
-        return transactionRepository.findAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
 }

@@ -1,0 +1,2 @@
+ALTER TABLE produce
+    MODIFY COLUMN status VARCHAR(30) NOT NULL;

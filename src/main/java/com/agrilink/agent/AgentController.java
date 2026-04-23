@@ -61,4 +61,9 @@ public class AgentController {
     public ResponseEntity<APIResponse> updateFarmer(@PathVariable String agentId, @PathVariable String farmerId, @RequestBody UpdateFarmerInfoRequest request) {
         return new ResponseEntity<>(new APIResponse(true, agentFarmerServices.updateFarmer(agentId, farmerId, request)), HttpStatus.OK);
     }
+
+    @GetMapping("/{agentId}/stats")
+    public ResponseEntity<APIResponse> getMyStats(@PathVariable String agentId) {
+        return new ResponseEntity<>(new APIResponse(true, agentFarmerServices.getAgentStats(agentId)), HttpStatus.OK);
+    }
 }

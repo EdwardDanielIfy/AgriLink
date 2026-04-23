@@ -1,0 +1,2 @@
+ALTER TABLE farmers
+    ADD COLUMN farm_size VARCHAR(100) NULL;

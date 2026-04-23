@@ -5,5 +5,6 @@ public enum ProduceStatus {
     OFFER_PENDING,
     SOLD,
     EXPIRED,
-    WITHDRAWN
+    WITHDRAWN,
+    PENDING_HUB_ASSIGNMENT
 }

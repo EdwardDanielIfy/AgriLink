@@ -1,6 +1,5 @@
 package com.agrilink.produce;
 
-import com.agrilink.marketplace.dto.ProduceListingResponse;
 import com.agrilink.shared.enums.ProduceStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,6 +16,8 @@ public interface ProduceRepository extends JpaRepository<Produce, String> {
     List<Produce> findByAgentId(String agentId);
 
     List<Produce> findByStatus(ProduceStatus status);
+
+    List<Produce> findByStatusIn(java.util.Collection<ProduceStatus> statuses);
 
     List<Produce> findByFarmerIdAndStatus(String farmerId, ProduceStatus status);
 

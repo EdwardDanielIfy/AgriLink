@@ -1,0 +1,2 @@
+ALTER TABLE farmers
+    MODIFY COLUMN farm_size FLOAT NULL;

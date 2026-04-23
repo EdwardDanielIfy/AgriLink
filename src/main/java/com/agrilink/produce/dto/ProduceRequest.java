@@ -10,10 +10,8 @@ import java.time.LocalDateTime;
 @Data
 public class ProduceRequest {
 
-    @NotBlank(message = "Farmer ID is required")
     private String farmerId;
 
-    @NotBlank(message = "Storage ID is required")
     private String storageId;
 
     private String agentId;

@@ -16,12 +16,10 @@ public class SmsReplyEventListener {
     @EventListener
     public void handleSmsReply(SmsReplyReceivedEvent event) {
         try {
-            String transactionId = transactionServices
-                    .findAwaitingResponseTransactionByPhone(event.getPhoneNumber());
+            String transactionId = findTransaction(event.getPhoneNumber());
 
             if (transactionId == null) {
-                log.warn("No awaiting transaction found for phone: {}",
-                        event.getPhoneNumber());
+                log.warn("No awaiting transaction found for phone: {}", event.getPhoneNumber());
                 return;
             }
 
@@ -38,15 +36,12 @@ public class SmsReplyEventListener {
     }
 
     private String findTransaction(String phone) {
-        // try as received
-        String txId = transactionServices
-                .findAwaitingResponseTransactionByPhone(phone);
+
+        String txId = transactionServices.findAwaitingResponseTransactionByPhone(phone);
         if (txId != null) return txId;
 
-        // try local format
         if (phone.startsWith("234")) {
-            txId = transactionServices
-                    .findAwaitingResponseTransactionByPhone("0" + phone.substring(3));
+            txId = transactionServices.findAwaitingResponseTransactionByPhone("0" + phone.substring(3));
         }
         return txId;
     }

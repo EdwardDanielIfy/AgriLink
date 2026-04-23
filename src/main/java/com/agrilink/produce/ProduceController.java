@@ -54,4 +54,9 @@ public class ProduceController {
     public ResponseEntity<APIResponse> getProduceByType(@PathVariable String produceType) {
         return new ResponseEntity<>(new APIResponse(true, produceServices.getProduceByType(produceType)), HttpStatus.OK);
     }
+
+    @PutMapping("/{produceId}/assign-storage/{storageId}")
+    public ResponseEntity<APIResponse> assignStorage(@PathVariable String produceId, @PathVariable String storageId) {
+        return new ResponseEntity<>(new APIResponse(true, produceServices.assignStorage(produceId, storageId)), HttpStatus.OK);
+    }
 }

@@ -14,6 +14,7 @@ public class FarmerRegistrationResponse {
         private String phoneNumber;
         private String location;
         private String primaryCrop;
+//        private Double farmSize;
         private Language preferredLanguage;
         private Double storageDebt;
         private Boolean hasAppAccess;

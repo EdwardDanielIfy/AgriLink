@@ -2,6 +2,7 @@ package com.agrilink.storage;
 
 import com.agrilink.agent.services.AgentServices;
 import com.agrilink.shared.ProduceCountProvider;
+import com.agrilink.shared.StorageCountProvider;
 import com.agrilink.storage.dto.StorageRequest;
 import com.agrilink.storage.dto.StorageResponse;
 
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class StorageServices {
+public class StorageServices implements StorageCountProvider {
 
     private final StorageRepository storageRepository;
     private final AgentServices agentServices;
@@ -89,5 +90,10 @@ public class StorageServices {
                 .managedByAgentId(storage.getManagedByAgentId())
                 .createdAt(storage.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    public int getStorageCountByAgent(String agentId) {
+        return storageRepository.findByManagedByAgentId(agentId).size();
     }
 }

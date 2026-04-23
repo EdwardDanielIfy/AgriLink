@@ -7,6 +7,8 @@ import com.agrilink.agent.services.AgentServices;
 import com.agrilink.farmer.FarmerServices;
 import com.agrilink.farmer.dto.FarmerRegistrationResponse;
 import com.agrilink.shared.config.JwtUtils;
+import com.agrilink.shared.dto.AdminResponse;
+import com.agrilink.shared.dto.AuthResponse;
 import com.agrilink.shared.exceptions.InvalidOperationException;
 import com.agrilink.transaction.TransactionServices;
 import com.agrilink.transaction.dto.TransactionResponse;
@@ -34,7 +36,8 @@ public class AdminServices {
     @Value("${agrilink.admin.password}")
     private String adminPassword;
 
-    public String login(AdminLoginRequest request) {
+
+    public AuthResponse login(AdminLoginRequest request) {
         if (!request.getEmail().equals(adminEmail)) {
             throw new InvalidOperationException("Invalid email or password");
         }
@@ -43,7 +46,15 @@ public class AdminServices {
             throw new InvalidOperationException("Invalid email or password");
         }
 
-        return jwtUtils.generateToken("AGADM-001", "ADMIN");
+        String token = jwtUtils.generateToken("AGADM-001", "ADMIN");
+        return AuthResponse.builder()
+                .token(token)
+                .user(AdminResponse.builder()
+                        .adminId("AGADM-001")
+                        .fullName("System Administrator")
+                        .email(adminEmail)
+                        .build())
+                .build();
     }
 
 
@@ -67,8 +78,7 @@ public class AdminServices {
         return farmerServices.viewProfile(farmerId);
     }
 
-    public FarmerRegistrationResponse assignAgentToFarmer(String farmerId,
-                                                          String agentId) {
+    public FarmerRegistrationResponse assignAgentToFarmer(String farmerId, String agentId) {
         return farmerServices.assignAgent(farmerId, agentId);
     }
 
