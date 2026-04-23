@@ -55,16 +55,22 @@ public class PaymentServices {
             long amountInKobo = (long) (transaction.getOfferedPrice() * transaction.getQuantitySold() * 100);
 
             String buyerEmail = buyerDetailsProvider.getBuyerEmail(transaction.getBuyerId());
+            String emailToUse = (buyerEmail != null && !buyerEmail.trim().isEmpty()) ? buyerEmail : "buyer_" + transaction.getBuyerId() + "@agrilink.local";
+
+            String paystackReference = transaction.getTransactionId() + "_" + System.currentTimeMillis();
 
             String requestBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
-                put("email", buyerEmail); // will be replaced with real buyer email after buyer module update
+                put("email", emailToUse); // fallback for phone-only logins
                 put("amount", amountInKobo);
-                put("reference", transaction.getTransactionId());
+                put("reference", paystackReference);
                 put("callback_url", "https://agrilink.com/payment/callback");
                 put("metadata", new java.util.HashMap<>() {{
                     put("transaction_id", transactionId);
                 }});
             }});
+
+            log.info("Initializing Paystack payment for transaction: {}. Amount: {} kobo. Email: {}. Reference: {}", 
+                    transactionId, amountInKobo, emailToUse, paystackReference);
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
@@ -77,8 +83,10 @@ public class PaymentServices {
             HttpResponse<String> response = client.send(request,
                     HttpResponse.BodyHandlers.ofString());
 
+            log.info("Paystack response status: {}. Body: {}", response.statusCode(), response.body());
+
             if (response.statusCode() != 200) {
-                throw new PaymentException("Paystack initialization failed: "
+                throw new PaymentException("Paystack initialization failed (" + response.statusCode() + "): "
                         + response.body());
             }
 
@@ -92,7 +100,7 @@ public class PaymentServices {
             result.setReference((String) data.get("reference"));
             result.setStatus("pending");
 
-            log.info("Payment initialized for transaction: {}", transactionId);
+            log.info("Payment initialized for transaction: {} with unique reference: {}", transactionId, paystackReference);
             return result;
 
         } catch (PaymentException e) {
@@ -118,8 +126,15 @@ public class PaymentServices {
 
             if ("charge.success".equals(event.getEvent())) {
                 String reference = event.getData().getReference();
-                transactionServices.confirmPayment(reference, reference);
-                log.info("Payment confirmed for reference: {}", reference);
+                String transactionId = (String) event.getData().getMetadata().get("transaction_id");
+                
+                if (transactionId == null) {
+                    log.warn("Webhook received without transaction_id metadata for reference: {}", reference);
+                    return;
+                }
+
+                transactionServices.confirmPayment(transactionId, reference);
+                log.info("Payment confirmed for transaction: {} with reference: {}", transactionId, reference);
             }
 
         } catch (Exception e) {

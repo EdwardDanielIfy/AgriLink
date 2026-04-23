@@ -25,18 +25,11 @@ export default function BuyerTransactionDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [paymentError, setPaymentError] = useState('');
-  const [smsOpen, setSmsOpen] = useState(false);
 
   const { data: tx, isLoading } = useQuery({
     queryKey: ['buyer-tx-detail', transactionId],
     queryFn: () => buyerService.getTransactionById(transactionId),
     enabled: !!transactionId,
-  });
-
-  const { data: smsHistory } = useQuery({
-    queryKey: ['tx-sms', transactionId],
-    queryFn: () => buyerService.getSmsHistory(transactionId),
-    enabled: smsOpen,
   });
 
   const deliveryMutation = useMutation({
@@ -47,7 +40,7 @@ export default function BuyerTransactionDetailPage() {
   const paymentMutation = useMutation({
     mutationFn: () => buyerService.initializePayment(transactionId),
     onSuccess: (data) => { if (data?.authorizationUrl) window.location.href = data.authorizationUrl; },
-    onError: (err) => setPaymentError(err.response?.data?.message || 'Payment initialization failed.'),
+    onError: (err) => setPaymentError(err.response?.data?.data || err.response?.data?.message || 'Payment initialization failed.'),
   });
 
   if (isLoading) return <div className="h-64 flex items-center justify-center text-primary-900/30 font-black uppercase animate-pulse">Loading...</div>;
@@ -141,32 +134,6 @@ export default function BuyerTransactionDetailPage() {
         </div>
       )}
 
-      {/* SMS History */}
-      <div className="bg-white rounded-[3rem] p-10 border-4 border-white shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display font-black text-xl text-primary-950">SMS Notifications</h3>
-          <button onClick={() => setSmsOpen(!smsOpen)} className="text-[10px] font-black uppercase tracking-widest text-secondary-600 hover:text-primary-950 transition-colors">
-            {smsOpen ? 'Hide' : 'View History'}
-          </button>
-        </div>
-        {smsOpen && (
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {!smsHistory || smsHistory.length === 0 ? (
-              <p className="text-center text-primary-900/30 text-xs font-black uppercase py-4">No SMS for this transaction</p>
-            ) : smsHistory.map((sms, i) => (
-              <div key={i} className="bg-[#FFFBF2] rounded-xl p-4 border-2 border-secondary/10">
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${sms.delivered ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {sms.delivered ? '✓ Delivered' : '✗ Failed'} — {sms.smsType?.replace(/_/g,' ')}
-                  </span>
-                  <span className="text-[9px] text-primary-900/30 font-bold">{new Date(sms.sentAt).toLocaleString()}</span>
-                </div>
-                <p className="text-primary-950 text-xs font-bold">{sms.message}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

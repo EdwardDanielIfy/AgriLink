@@ -23,6 +23,8 @@ public class PaystackWebhookEvent {
         @JsonProperty("customer")
         private Customer customer;
 
+        private java.util.Map<String, Object> metadata;
+
         @Data
         public static class Customer {
             private String email;
